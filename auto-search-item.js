@@ -1,6 +1,18 @@
-function getShopIndex(responseText, shopNameSearched) {
+/**
+ *   param    responseText 		   the html in text format
+ *   param	  shopNameSearched 	   the name of the shop you want to find
+ *   return   If the specified shop is found, then return the index of 
+ *			  the shop which is range from 1 to 48. Otherwise, -1 is 
+ *			  returned.
+ *
+ */
+function searchShopByText(responseText, shopNameSearched) {
 	var shopIndex = -1;
 	var totalShopCount = 48;
+	/** The next three parameters depend on the words of "nick" and "shopcard".
+	 *  If you want to know why they are 7, -4, 13 respectively, just read the
+	 *  html text.
+	 */
 	var nickStartOffset = 7;
 	var nickStopOffset = -4;
 	var nextShopOffset = 13;
@@ -8,7 +20,7 @@ function getShopIndex(responseText, shopNameSearched) {
 		var nickStartIndex = responseText.indexOf('nick')+nickStartOffset;
 		var nickStopIndex = responseText.indexOf('shopcard')+nickStopOffset;
 		var nick = responseText.substring(nickStartIndex,nickStopIndex+1);
-		if(nick == shopNameSearched)
+		if(nick === shopNameSearched)
 			break;
 		responseText = responseText.substring(nickStopIndex+nextShopOffset);
 	}
@@ -20,6 +32,14 @@ function getShopIndex(responseText, shopNameSearched) {
 	}
 	return shopIndex;
 }
+/**
+ *   param    shopIndex    the index of the shop which is range 
+ *	 					   from 1 to 48
+ *	 return   return the row of the specified index of the shop
+ *			  as well as the column. You can find the shop in
+ *			  your explorer by the row and column. For example,
+ *			  one page has 11 rows and 4 columns for 360 browser.
+ */
 function getShopLocation(shopIndex) {
 	var column = shopIndex % 4;
 	if(column == 0) {
@@ -32,50 +52,82 @@ function getShopLocation(shopIndex) {
 	var shopLocation = 'row=' + row + '\n' + 'column=' + column;
 	return shopLocation;
 }
-function getNextPageUrl() {
-	var url = window.location;
-	var queryUrl = url.search;
-	var baseUrl = queryUrl.split('s=')[0];
-	var sValue = parseInt( queryUrl.split('s=')[1].split('&')[0] );
-	var dataValue = sValue + 44;
-	var nextPageUrl= 'search' + baseUrl + 's=' + sValue + '&data-key=s&data-value=' + dataValue;
-	return nextPageUrl;
+/**
+ *  Search the shop using the Location object.
+ *  param    shopNameSearched    the name of the shop you want to find
+ *  return   If the specified shop is found, then return the index of 
+ *			 the shop which is range from 1 to 48. Otherwise, -1 is 
+ *			 returned. 
+ */
+function searchShopByHTML(shopNameSearched) {
+	var className = 'shopname J_MouseEneterLeave J_ShopInfo';
+	var shopName = document.getElementsByClassName(className);
+	var shopCount = shopName.length;
+	// the following parameter depends on the structure of the html of taobao
+	var shopNameOffset = 3;
+	for(var i = 0; i < shopCount; i++) {
+		var shop = shopName[i];
+		if(shop.childNodes[shopNameOffset].textContent === shopNameSearched)
+			break;
+	}
+	if(i == shopCount)
+		var shopIndex = -1;
+	else {
+		var shopIndex = i + 1;		
+	}
+	return shopIndex;
 }
+
+// The main program
 var shopNameSearched = window.prompt('Please input the shop name!');
-var className = 'shopname J_MouseEneterLeave J_ShopInfo';
-var shopName = document.getElementsByClassName(className);
-var shopCount = shopName.length;
-var shopNameOffset = 3;
-var page = 1;
-for(var i = 0; i < shopCount; i++) {
-	var shop = shopName[i];
-	if(shop.childNodes[shopNameOffset].textContent == shopNameSearched)
-		break;
+var pageIndex = 1;
+var shopIndex=searchShopByHTML(shopNameSearched);
+if( shopIndex === -1) {
+	var msg = 'can not find the specified shop';	
 }
-if(i == shopCount)
-	var msg = 'can not find the specified shop';
 else {
-	var shopIndex = i + 1;
-	var msg = 'page=' + page + '\n' + getShopLocation(shopIndex);
+	var shopLocation = getShopLocation(shopIndex);
+	var msg = 'page=' + pageIndex + '\n' + getShopLocation(shopIndex);
 }
-if(msg == 'can not find the specified shop') {
-	var totalPage=4;
+if(msg === 'can not find the specified shop') {
+	var totalPage = 6;// the maximum number of page that can be searched
 	var isStop =false;
-	for(var pageIndex = 2; !isStop && pageIndex <= totalPage; pageIndex++) {
-		var nextPageUrl= getNextPageUrl();
+	var queryUrl = window.location.search;	
+	var sIndex = queryUrl.lastIndexOf('s=');
+	var baseUrl = queryUrl.substring(0 , sIndex);
+	var url = queryUrl.substring(sIndex +2);
+	var sValueIndex = url.indexOf('&');	
+	if(sValueIndex === -1 ) {
+		var sValue = parseInt(url);
+		var isOffset = false;
+	}
+	else {
+		var sValue = parseInt( url.substring(0 , sValueIndex ) );
+		var offsetUrl = url.substring(sValueIndex);
+		var isOffset = true;
+	}	
+	for(pageIndex = 2; !isStop && pageIndex <= totalPage; pageIndex++) {
+		sValue += 44;
+		if( isOffset === true )	{	
+			var nextPageUrl= 'search' + baseUrl + 's=' + sValue + offsetUrl;
+		}
+		else {
+			var nextPageUrl= 'search' + baseUrl + 's=' + sValue;
+		}
 		var request = new XMLHttpRequest();
-		request.open('GET', nextPageUrl,false);
+		request.open('GET', nextPageUrl, false);
 		request.send(null);
 		var responseText = request.responseText;
-		var shopIndex = getShopIndex(responseText, shopNameSearched);
-		if(shopIndex > -1) {
-			var shopLocation = getShopLocation(shopIndex);
-			msg = 'page=' + pageIndex + '\n' + shopLocation;
+		var shopIndex = searchShopByText(responseText, shopNameSearched);
+		if(shopIndex > -1) {			
 			isStop= true;
-			alert(msg);
+			/** You can replace the statement before with a "break". 
+			 *  If you do this, you should put the following two
+			 *  statements outside the for loop.
+			 */			
+			var shopLocation = getShopLocation(shopIndex);
+			msg = 'page=' + pageIndex + '\n' + shopLocation;					
 		}
 	}
-}
-else {
-	alert(msg);
-}
+}	
+alert(msg);

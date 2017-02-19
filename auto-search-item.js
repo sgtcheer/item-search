@@ -81,6 +81,7 @@ function searchShopByHTML(shopNameSearched) {
 // The main program
 var shopNameSearched = window.prompt('Please input the shop name!');
 var pageIndex = 1;
+var isStop =false;
 var shopIndex=searchShopByHTML(shopNameSearched);
 if( shopIndex === -1) {
 	var msg = 'can not find the specified shop';	
@@ -90,8 +91,7 @@ else {
 	var msg = 'page=' + pageIndex + '\n' + getShopLocation(shopIndex);
 }
 if(msg === 'can not find the specified shop') {
-	var totalPage = 6;// the maximum number of page that can be searched
-	var isStop =false;
+	var totalPage = 6;// the maximum number of page that can be searched	
 	var queryUrl = window.location.search;	
 	var sIndex = queryUrl.lastIndexOf('s=');
 	var baseUrl = queryUrl.substring(0 , sIndex);
@@ -131,3 +131,6 @@ if(msg === 'can not find the specified shop') {
 	}
 }	
 alert(msg);
+if(isStop === true) {
+	window.location = nextPageUrl;
+}

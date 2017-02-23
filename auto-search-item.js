@@ -77,11 +77,35 @@ function searchShopByHTML(shopNameSearched) {
 	}
 	return shopIndex;
 }
+/**
+ *	param	sValue	sValue is a key parameter of the URL which has
+ *	 		relation with the page number of the current html page.
+ *	return	the page number of the current html page is returned.
+ */
+function getCurrentPageNumber(sValue) {
+	var pageNumber = sValue / 44 + 1;
+	return pageNumber;
+}
 
 // The main program
 var shopNameSearched = window.prompt('Please input the shop name!');
-var pageIndex = 1;
 var isStop =false;
+var totalPage = 20;// the maximum number of page that can be searched	
+var queryUrl = window.location.search;	
+var sIndex = queryUrl.lastIndexOf('s=');
+var baseUrl = queryUrl.substring(0 , sIndex);
+var url = queryUrl.substring(sIndex +2);
+var sValueIndex = url.indexOf('&');	
+if(sValueIndex === -1 ) {
+	var sValue = parseInt(url);
+	var isOffset = false;
+}
+else {
+	var sValue = parseInt( url.substring(0 , sValueIndex ) );
+	var offsetUrl = url.substring(sValueIndex);
+	var isOffset = true;
+}
+var pageIndex = getCurrentPageNumber(sValue);
 var shopIndex=searchShopByHTML(shopNameSearched);
 if( shopIndex === -1) {
 	var msg = 'can not find the specified shop';	
@@ -90,23 +114,8 @@ else {
 	var shopLocation = getShopLocation(shopIndex);
 	var msg = 'page=' + pageIndex + '\n' + getShopLocation(shopIndex);
 }
-if(msg === 'can not find the specified shop') {
-	var totalPage = 6;// the maximum number of page that can be searched	
-	var queryUrl = window.location.search;	
-	var sIndex = queryUrl.lastIndexOf('s=');
-	var baseUrl = queryUrl.substring(0 , sIndex);
-	var url = queryUrl.substring(sIndex +2);
-	var sValueIndex = url.indexOf('&');	
-	if(sValueIndex === -1 ) {
-		var sValue = parseInt(url);
-		var isOffset = false;
-	}
-	else {
-		var sValue = parseInt( url.substring(0 , sValueIndex ) );
-		var offsetUrl = url.substring(sValueIndex);
-		var isOffset = true;
-	}	
-	for(pageIndex = 2; !isStop && pageIndex <= totalPage; pageIndex++) {
+if(msg === 'can not find the specified shop') {	
+	for(pageIndex += 1; !isStop && pageIndex <= totalPage; pageIndex++) {
 		sValue += 44;
 		if( isOffset === true )	{	
 			var nextPageUrl= 'search' + baseUrl + 's=' + sValue + offsetUrl;
@@ -125,8 +134,7 @@ if(msg === 'can not find the specified shop') {
 			 *  If you do this, you should put the following two
 			 *  statements outside the for loop.
 			 */			
-			var shopLocation = getShopLocation(shopIndex);
-			msg = 'page=' + pageIndex + '\n' + shopLocation;					
+			msg = 'page=' + getCurrentPageNumber(sValue) + '\n' + getShopLocation(shopIndex);					
 		}
 	}
 }	

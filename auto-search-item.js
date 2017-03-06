@@ -101,12 +101,22 @@ function getRegularExpression(str) {
 	var regEx = new RegExp('^' + str + '$');
 	return regEx;	
 }
+/**
+ *	get	the total number of page of the search results.
+ */
+function getTotalPage() {
+	var currentPageClass = 'current';
+	var page = document.getElementsByClassName(currentPageClass)[0].parentNode.innerText;
+	var startIndex = 2;
+	return page.substring(startIndex);	
+}
 
 // The main program
 var shopNameSearched = window.prompt('请输入要搜索的店铺的掌柜名');
 var shopNameSearched = getRegularExpression(shopNameSearched);
 var isStop =false;
-var totalPage = 20;// the maximum number of page that can be searched	
+var totalPage = getTotalPage();	
+alert(totalPage);
 var queryUrl = window.location.search;	
 var sIndex = queryUrl.lastIndexOf('s=');
 var baseUrl = queryUrl.substring(0 , sIndex);
